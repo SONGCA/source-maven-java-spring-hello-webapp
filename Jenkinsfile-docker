@@ -58,7 +58,7 @@ pipeline {
 
       steps {
 
-        sh 'docker image build -t songca/myweb:$BUILD_NUMBER .'
+        sh 'docker image build -t songcj1/myweb:$BUILD_NUMBER .'
 
       }
 
@@ -70,7 +70,7 @@ pipeline {
 
       steps {
 
-        sh 'docker image tag songca/myweb:$BUILD_NUMBER songca/myweb:latest' // Tagging with latest
+        sh 'docker image tag songcj1/myweb:$BUILD_NUMBER songca/myweb:latest' // Tagging with latest
 
       }
 
@@ -84,9 +84,9 @@ pipeline {
 
         withDockerRegistry(credentialsId: 'docker-registry-credential', url: 'https://index.docker.io/v1/') {
 
-          sh 'docker image push songca/myweb:$BUILD_NUMBER' // Tagging with build number
+          sh 'docker image push songcj1/myweb:$BUILD_NUMBER' // Tagging with build number
 
-          sh 'docker image push songca/myweb:latest' // Tagging with latest
+          sh 'docker image push songcj1/myweb:latest' // Tagging with latest
 
         }
 
