@@ -70,7 +70,7 @@ pipeline {
 
       steps {
 
-        sh 'docker image tag songcj1/myweb:$BUILD_NUMBER songca/myweb:latest' // Tagging with latest
+        sh 'docker image tag songcj1/myweb:$BUILD_NUMBER songcj1/myweb:latest' // Tagging with latest
 
       }
 
@@ -100,7 +100,7 @@ pipeline {
 
       steps {
 
-        sh 'docker container run --detach --name my-tomcat -p 80:8080 songca/myweb:latest'
+        sh 'docker container run --detach --name my-tomcat -p 80:8080 songcj1/myweb:latest'
 
       }
 
