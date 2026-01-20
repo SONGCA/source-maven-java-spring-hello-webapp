@@ -29,8 +29,8 @@ pipeline {
         stage('Image Tag') {
             agent any
             steps {
-                sh 'docker image tag tomcat:hello SONGCA/tomcat:v1'
-                sh 'docker image tag tomcat:hello SONGCA/tomcat:latest'
+                sh 'docker image tag tomcat:hello songcj1/tomcat:v1'
+                sh 'docker image tag tomcat:hello songcj1/tomcat:latest'
             }
         }
 
