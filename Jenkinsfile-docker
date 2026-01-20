@@ -1,51 +1,53 @@
 pipeline {
-  agent none
+    agent any // 전체를 any로 통일하여 노드 이동을 최소화합니다.
 
-  stages {
-    stage('Checkout') {
-      agent any
-      steps {
-        git branch: 'main',
-        url: 'https://github.com/SONGCA/source-maven-java-spring-hello-webapp.git'
-      }
-    }
-    stage('Build') {
-      agent {
-        docker { image 'maven:3-openjdk-17' }
-      }
-      steps {
-        sh 'mvn clean package'
-      }
-    }
-    stage('ImageBuild') {
-      agent any
-      steps {
-        sh 'docker image build -t tomcat:hello .'
-      }
-    }
-    stage('ImageTag') {
-      agent any
-      steps {
-        sh 'docker image tag tomcat:hello songcj1/tomcat:$BUILD_NUMBER'
-        sh 'docker image tag tomcat:hello songcj1/tomcat:latest'
-      }
-    }
-    stage('ImagePush') {
-      agent any
-      steps {
-        withDockerRegistry(credentialsId: 'docker-hub-token', url: 'https://index.docker.io/v1/') {
-          sh 'docker image push songcj1/tomcat:$BUILD_NUMBER'
-          sh 'docker image push songcj1/tomcat:latest'
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/SONGCA/source-maven-java-spring-hello-webapp.git'
+            }
         }
-      }
+
+        stage('Build') {
+            agent {
+                docker { image 'maven:3-openjdk-17' }
+            }
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+
+        stage('Image Build') {
+            steps {
+                // 파일이 존재하는지 확인 후 빌드
+                sh 'ls -l target/' 
+                sh 'docker image build -t tomcat:hello .'
+            }
+        }
+
+        stage('Image Tag') {
+            steps {
+                // 오타 수정됨: 원본 이미지 이름 추가
+                sh "docker image tag tomcat:hello songcj1/tomcat:${env.BUILD_NUMBER}"
+                sh "docker image tag tomcat:hello songcj1/tomcat:latest"
+            }
+        }
+
+        stage('Image Push') {
+            steps {
+                withDockerRegistry(credentialsId: 'docker-hub-token', url: 'https://index.docker.io/v1/') {
+                    sh "docker image push songcj1/tomcat:${env.BUILD_NUMBER}"
+                    sh "docker image push songcj1/tomcat:latest"
+                }
+            }
+        }
+
+        stage('Running Container') {
+            steps {
+                // dind 에이전트 제거하고 직접 실행
+                sh "docker -H tcp://192.168.56.104:2375 rm -f webserver || true"
+                sh "docker -H tcp://192.168.56.104:2375 run -d --name webserver -p 80:8080 songcj1/tomcat:latest"
+            }
+        }
     }
-    stage('RunningContainer') {
-      agent {
-        docker { image 'docker:dind' }
-      }
-      steps {
-        sh 'docker -H tcp://192.168.56.104:2375 run -d --name webserver -p 80:8080 songcj1/tomcat:latest'
-      }
-    }
-  }
 }
