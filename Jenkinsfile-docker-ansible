@@ -1,56 +1,50 @@
 pipeline {
-    agent any // 전체 단계를 하나의 에이전트에서 실행하여 파일을 공유합니다.
+  agent none
 
-    stages {
-        stage('Checkout') {
-            agent { label 'local' }
-            steps {
-                git branch: 'main', url: 'https://github.com/SONGCA/source-maven-java-spring-hello-webapp.git'
-            }
-        }
-
-        stage('Build') {
-            steps {
-                script {
-                    docker.image('maven:3-openjdk-17').inside {
-                        sh 'mvn clean package'
-                    }
-                }
-            }
-        }
-
-        stage('Image Build') {
-            agent { label 'local' }
-            steps {
-                sh 'ls -l target/'
-                sh 'docker image build -t tomcat:hello .'
-            }
-        }
-
-        stage('Image Tag') {
-            agent { label 'local' }
-            steps {
-                sh "docker image tag tomcat:hello songcj1/tomcat:${env.BUILD_NUMBER}"
-                sh "docker image tag tomcat:hello songcj1/tomcat:latest"
-            }
-        }
-
-        stage('Image Push') {
-            agent { label 'local' }
-            steps {
-                withDockerRegistry(credentialsId: 'docker-hub-token', url: 'https://index.docker.io/v1/') {
-                    sh "docker image push songcj1/tomcat:${env.BUILD_NUMBER}"
-                    sh "docker image push songcj1/tomcat:latest"
-                }
-            }
-        }
-
-        stage('Running Container') {
-            agent { label 'local' }
-            steps {
-                // 이 단계가 실행되려면 playbook.yaml이 반드시 깃허브에 있어야 합니다.
-                ansiblePlaybook(playbook: 'playbook.yaml')
-            }
-        }
+  stages {
+    stage('CheckOut') {
+      agent { label ('local') }
+      steps {
+        git branch: 'main',
+        url: 'https://github.com/SONGCA/source-maven-java-spring-hello-webapp.git'
+      }
     }
+    stage('Build') {
+      agent {
+        docker { image 'maven:3-openjdk-17' }
+      }
+      steps {
+        sh 'mvn clean package'
+      }
+    }
+    stage('ImageBuild') {
+      agent { label ('local') }
+      steps {
+        sh 'docker image build -t tomcat:hello .'
+      }
+    }
+    stage('ImageTag') {
+      agent { label ('local') }
+      steps {
+//        sh 'docker image tag tomcat:hello songcj1/tomcat:$BUILDNUMBER'
+        sh 'docker image tag tomcat:hello songcj1/tomcat:latest'
+      }
+    }
+    stage('ImagePush') {
+      agent { label ('local') }
+      steps {
+        withDockerRegistry(credentialsId: 'docker-hub-token', url: 'https://index.docker.io/v1/') {
+//          sh 'docker image push songcj1/tomcat:$BUILDNUMBER'
+          sh 'docker image push songcj1/tomcat:latest'
+        }
+      }
+    }
+    stage('Running Container') {
+      agent { label ('local') }
+      steps {
+        ansiblePlaybook(playbook: 'playbook.yaml')
+      }
+    }
+  }
 }
+
