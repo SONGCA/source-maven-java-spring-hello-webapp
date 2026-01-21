@@ -3,7 +3,7 @@ pipeline {
 
     stages {
         stage('Checkout') {
-            agent { label ('local')}
+            agent { label 'local' }
             steps {
                 git branch: 'main', url: 'https://github.com/SONGCA/source-maven-java-spring-hello-webapp.git'
             }
@@ -11,9 +11,6 @@ pipeline {
 
         stage('Build') {
             steps {
-                // 특정 단계에서만 컨테이너를 사용하려면 스크립트 블록 내에서 실행하거나,
-                // 호스트에 메이븐이 있다면 sh 'mvn ...'을 사용하세요.
-                // 여기서는 기존 방식을 유지하되 파일을 보존하도록 처리합니다.
                 script {
                     docker.image('maven:3-openjdk-17').inside {
                         sh 'mvn clean package'
@@ -23,16 +20,15 @@ pipeline {
         }
 
         stage('Image Build') {
-            agent { label('local')}
+            agent { label 'local' }
             steps {
-                // 이제 같은 agent 상에 있으므로 target/ 폴더가 보입니다.
                 sh 'ls -l target/'
                 sh 'docker image build -t tomcat:hello .'
             }
         }
 
         stage('Image Tag') {
-            agent { label('local')}
+            agent { label 'local' }
             steps {
                 sh "docker image tag tomcat:hello songcj1/tomcat:${env.BUILD_NUMBER}"
                 sh "docker image tag tomcat:hello songcj1/tomcat:latest"
@@ -40,7 +36,7 @@ pipeline {
         }
 
         stage('Image Push') {
-            agent { label('local')}
+            agent { label 'local' }
             steps {
                 withDockerRegistry(credentialsId: 'docker-hub-token', url: 'https://index.docker.io/v1/') {
                     sh "docker image push songcj1/tomcat:${env.BUILD_NUMBER}"
@@ -49,11 +45,10 @@ pipeline {
             }
         }
 
-        stage('Running Container') 
-            agent { label('local')}
+        stage('Running Container') {
+            agent { label 'local' }
             steps {
-                // dind 컨테이너 에이전트를 별도로 쓰지 않고 
-                // 호스트의 ansible 기능을 바로 사용합니다.
+                // 이 단계가 실행되려면 playbook.yaml이 반드시 깃허브에 있어야 합니다.
                 ansiblePlaybook(playbook: 'playbook.yaml')
             }
         }
