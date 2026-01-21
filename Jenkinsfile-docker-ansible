@@ -1,50 +1,55 @@
 pipeline {
-  agent none
+    agent none
 
-  stages {
-    stage('CheckOut') {
-      agent { label ('local') }
-      steps {
-        git branch: 'main',
-        url: 'https://github.com/SONGCA/source-maven-java-spring-hello-webapp.git'
-      }
-    }
-    stage('Build') {
-      agent {
-        docker { image 'maven:3-openjdk-17' }
-      }
-      steps {
-        sh 'mvn clean package'
-      }
-    }
-    stage('ImageBuild') {
-      agent { label ('local') }
-      steps {
-        sh 'docker image build -t tomcat:hello .'
-      }
-    }
-    stage('ImageTag') {
-      agent { label ('local') }
-      steps {
-//        sh 'docker image tag tomcat:hello songcj1/tomcat:$BUILDNUMBER'
-        sh 'docker image tag tomcat:hello songcj1/tomcat:latest'
-      }
-    }
-    stage('ImagePush') {
-      agent { label ('local') }
-      steps {
-        withDockerRegistry(credentialsId: 'docker-hub-token', url: 'https://index.docker.io/v1/') {
-//          sh 'docker image push songcj1/tomcat:$BUILDNUMBER'
-          sh 'docker image push songcj1/tomcat:latest'
+    stages {
+        stage('CheckOut') {
+            agent { label 'local' }
+            steps {
+                git branch: 'main', url: 'https://github.com/SONGCA/source-maven-java-spring-hello-webapp.git'
+            }
         }
-      }
-    }
-    stage('Running Container') {
-      agent { label ('local') }
-      steps {
-        ansiblePlaybook(playbook: 'playbook.yaml')
-      }
-    }
-  }
-}
 
+        stage('Build') {
+            agent { label 'local' } // 동적 에이전트가 아닌 도커가 이미 있는 local 사용
+            steps {
+                script {
+                    // local에 있는 도커를 사용하여 maven 컨테이너 실행
+                    docker.image('maven:3-openjdk-17').inside {
+                        sh 'mvn clean package'
+                    }
+                }
+            }
+        }
+
+        stage('ImageBuild') {
+            agent { label 'local' }
+            steps {
+                sh 'docker image build -t tomcat:hello .'
+            }
+        }
+
+        stage('ImageTag') {
+            agent { label 'local' }
+            steps {
+                sh 'docker image tag tomcat:hello songcj1/tomcat:latest'
+            }
+        }
+
+        stage('ImagePush') {
+            agent { label 'local' }
+            steps {
+                withDockerRegistry(credentialsId: 'docker-hub-token', url: 'https://index.docker.io/v1/') {
+                    sh 'docker image push songcj1/tomcat:latest'
+                }
+            }
+        }
+
+        stage('Running Container') {
+            agent { label 'local' }
+            steps {
+                // 깃허브에 playbook.yaml 푸시된 상태여야 함!
+                ansiblePlaybook(playbook: 'playbook.yaml')
+            }
+        }
+    }
+}
