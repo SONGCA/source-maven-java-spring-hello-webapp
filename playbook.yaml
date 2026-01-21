@@ -1,12 +1,17 @@
-- name: test
+- name: deploy tomcat
   hosts: localhost
   connection: local
-
   tasks:
+    - name: Remove existing container
+      docker_container:
+        name: mhyweb
+        state: absent
+
     - name: Create & Start Container
       docker_container:
-          name: mhyweb
-          image: "songcj1/tomcat:latest"
-          state: started
-          ports:
-            - "80:8080"
+        name: mhyweb
+        image: "songcj1/tomcat:latest"
+        state: started
+        pull: yes # 새 이미지를 항상 가져오도록 설정
+        ports:
+          - "80:8080" # 호스트 8081 -> 컨테이너 8080
