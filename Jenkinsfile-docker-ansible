@@ -50,7 +50,7 @@ pipeline {
         }
 
         stage('Running Container') 
-            agent { label('local')}{
+            agent { label('local')}
             steps {
                 // dind 컨테이너 에이전트를 별도로 쓰지 않고 
                 // 호스트의 ansible 기능을 바로 사용합니다.
