@@ -53,7 +53,7 @@ spec:
     stage('Image Build & Push') {
       steps {
         container('kaniko') {
-          sh "executor --context=dir:///home/jenkins/agent/workspace/test/ --destination=songcj1/k8s:${BUILD_NUMBER} --destination=songcj1/k8s:latest"
+          sh "executor --context=dir://${WORKSPACE} --destination=songcj1/k8s:${BUILD_NUMBER} --destination=songcj1/k8s:latest"
         }
       }
     }
